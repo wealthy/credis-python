@@ -6,9 +6,6 @@ setup(
     version="0.1.0",
     description="Redis controller client for Sentinel Setup",
     author="Anshul Patel",
-    install_requires=[
-        "redis",
-        "typing-extensions",
-    ],
+    install_requires=["redis", "setuptools"],
     python_requires=">=3.9",
 )
