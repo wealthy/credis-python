@@ -1,0 +1,7 @@
+[project]
+name = "credis-python"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["redis>=5.2.1", "setuptools>=78.1.0"]
