@@ -68,6 +68,8 @@ class AsyncClient:
     async def write_pipeline_ctx(
         self, transaction: bool = True
     ) -> AsyncIterator[Pipeline]:
+        if not self.connected:
+            await self.connect()
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -76,6 +78,8 @@ class AsyncClient:
             yield pipe
 
     async def write_pipeline(self, transaction: bool = True) -> Pipeline:
+        if not self.connected:
+            await self.connect()
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -83,6 +87,8 @@ class AsyncClient:
         return await self.__master.pipeline(transaction)
 
     async def read_pipeline_ctx(self) -> AsyncIterator[Pipeline]:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -91,6 +97,8 @@ class AsyncClient:
             yield pipe
 
     async def read_pipeline(self) -> Pipeline:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -105,6 +113,8 @@ class AsyncClient:
         value_from_callable: bool = False,
         watch_delay: Optional[float] = None,
     ):
+        if not self.connected:
+            await self.connect()
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -127,6 +137,8 @@ class AsyncClient:
         self.connected = False
 
     async def ping(self) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -146,6 +158,8 @@ class AsyncClient:
         exat: Union[AbsExpiryT, None] = None,
         pxat: Union[AbsExpiryT, None] = None,
     ) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -165,6 +179,8 @@ class AsyncClient:
         )
 
     async def get(self, name: KeyT) -> Optional[ResponseT]:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -173,6 +189,8 @@ class AsyncClient:
         return await self.__slave.get(name)
 
     async def delete(self, *names: KeyT) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -181,6 +199,8 @@ class AsyncClient:
         return await self.__master.delete(*names_list)
 
     async def exists(self, *names: KeyT) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -189,6 +209,8 @@ class AsyncClient:
         return await self.__slave.exists(*names_list)
 
     async def keys(self, pattern: PatternT = "*") -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -204,6 +226,8 @@ class AsyncClient:
         mapping: Optional[dict] = None,
         items: Optional[list] = None,
     ) -> Union[Awaitable[int], int]:
+        if not self.connected:
+            await self.connect()
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -214,6 +238,8 @@ class AsyncClient:
     async def hget(
         self, name: str, key: str
     ) -> Union[Awaitable[Optional[str]], Optional[str]]:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -222,6 +248,8 @@ class AsyncClient:
         return await self.__slave.hget(name, key)  # type: ignore
 
     async def hgetall(self, name: str) -> Union[Awaitable[dict], dict]:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -230,6 +258,8 @@ class AsyncClient:
         return await self.__slave.hgetall(name)  # type: ignore
 
     async def hdel(self, name: str, *keys: str) -> Union[Awaitable[int], int]:
+        if not self.connected:
+            await self.connect()
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -238,6 +268,8 @@ class AsyncClient:
         return await self.__master.hdel(name, *keys)  # type: ignore
 
     async def hkeys(self, name: str) -> Union[Awaitable[list], list]:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -246,6 +278,8 @@ class AsyncClient:
         return await self.__slave.hkeys(name)  # type: ignore
 
     async def hvals(self, name: str) -> Union[Awaitable[list], list]:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -254,6 +288,8 @@ class AsyncClient:
         return await self.__slave.hvals(name)  # type: ignore
 
     async def hlen(self, name: str) -> Union[Awaitable[int], int]:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -269,6 +305,8 @@ class AsyncClient:
         count: Optional[int] = None,
         no_values: Optional[bool] = None,
     ) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -283,6 +321,8 @@ class AsyncClient:
         count: Optional[int] = None,
         no_values: Optional[bool] = None,
     ) -> AsyncIterator:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -291,6 +331,8 @@ class AsyncClient:
         return await self.__slave.hscan_iter(name, match, count, no_values)  # type: ignore
 
     async def flushdb(self, asynchronous: bool = False, **kwargs: Any) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -298,6 +340,8 @@ class AsyncClient:
         return await self.__master.flushdb(asynchronous=asynchronous, **kwargs)
 
     async def flushall(self, asynchronous: bool = False, **kwargs: Any) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -312,6 +356,8 @@ class AsyncClient:
         _type: Optional[str] = None,
         **kwargs: Any,
     ) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -325,6 +371,8 @@ class AsyncClient:
         _type: Optional[str] = None,
         **kwargs: Any,
     ) -> AsyncIterator:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -332,6 +380,8 @@ class AsyncClient:
         return await self.__slave.scan_iter(match, count, _type, **kwargs)  # type: ignore
 
     async def sadd(self, name: str, *values: FieldT) -> Union[Awaitable[int], int]:
+        if not self.connected:
+            await self.connect()
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -340,6 +390,8 @@ class AsyncClient:
         return await self.__master.sadd(name, *values)  # type: ignore
 
     async def srem(self, name: str, *values: FieldT) -> Union[Awaitable[int], int]:
+        if not self.connected:
+            await self.connect()
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -348,6 +400,8 @@ class AsyncClient:
         return await self.__master.srem(name, *values)  # type: ignore
 
     async def smembers(self, name: str) -> Union[Awaitable[Set], Set]:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -358,6 +412,8 @@ class AsyncClient:
     async def sismember(
         self, name: str, value: str
     ) -> Union[Awaitable[Union[Literal[0], Literal[1]]], Union[Literal[0], Literal[1]]]:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -368,6 +424,8 @@ class AsyncClient:
     async def smove(
         self, src: str, dst: str, value: str
     ) -> Union[Awaitable[bool], bool]:
+        if not self.connected:
+            await self.connect()
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -383,6 +441,8 @@ class AsyncClient:
         match: Optional[PatternT] = None,
         count: Optional[int] = None,
     ) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -396,6 +456,8 @@ class AsyncClient:
         match: Optional[PatternT] = None,
         count: Optional[int] = None,
     ) -> AsyncIterator:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -414,6 +476,8 @@ class AsyncClient:
         gt: bool = False,
         lt: bool = False,
     ) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -424,6 +488,8 @@ class AsyncClient:
         )
 
     async def zrem(self, name: str, *values: EncodableT) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -444,6 +510,8 @@ class AsyncClient:
         offset: Optional[int] = None,
         num: Optional[int] = None,
     ) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -470,6 +538,8 @@ class AsyncClient:
         withscores: bool = False,
         score_cast_func: Union[type, Callable] = float,
     ) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -493,6 +563,8 @@ class AsyncClient:
         withscores: bool = False,
         score_cast_func: Union[type, Callable] = float,
     ) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -512,6 +584,8 @@ class AsyncClient:
         withscores: bool = False,
         score_cast_func: Union[type, Callable] = float,
     ) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -522,6 +596,8 @@ class AsyncClient:
         )
 
     async def zcard(self, name: KeyT) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -532,6 +608,8 @@ class AsyncClient:
     async def zcount(
         self, name: KeyT, min: ZScoreBoundT, max: ZScoreBoundT
     ) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -545,6 +623,8 @@ class AsyncClient:
         value: EncodableT,
         withscore: bool = False,
     ) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -558,6 +638,8 @@ class AsyncClient:
         value: EncodableT,
         withscore: bool = False,
     ) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -573,6 +655,8 @@ class AsyncClient:
         count: Union[int, None] = None,
         score_cast_func: Union[type, Callable] = float,
     ) -> ResponseT:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
@@ -593,6 +677,8 @@ class AsyncClient:
         count: Union[int, None] = None,
         score_cast_func: Union[type, Callable] = float,
     ) -> AsyncIterator:
+        if not self.connected:
+            await self.connect()
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
