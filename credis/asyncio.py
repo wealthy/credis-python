@@ -56,6 +56,8 @@ class AsyncClient:
             password=self.__password,
         )
         try:
+            await self.__sentinel.discover_master(self.__masterset_name)
+            await self.__sentinel.discover_slaves(self.__masterset_name)
             self.__master = self.__sentinel.master_for(self.__masterset_name)
             self.__slave = self.__sentinel.slave_for(self.__masterset_name)
             self.connected = True

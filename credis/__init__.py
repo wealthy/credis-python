@@ -81,6 +81,8 @@ class Client:
                 f"Failed to connect to Redis Sentinel at {self.__host}:{self.__port}: {str(e)}"
             ) from e
         try:
+            self.__sentinel.discover_master(self.__masterset_name)
+            self.__sentinel.discover_slaves(self.__masterset_name)
             self.__master = self.__sentinel.master_for(
                 self.__masterset_name,
                 socket_timeout=self.__socket_timeout,
