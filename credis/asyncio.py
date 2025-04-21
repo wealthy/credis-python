@@ -53,13 +53,21 @@ class AsyncClient:
         self.__sentinel = Sentinel(
             [(self.__host, self.__port)],
             socket_timeout=self.__socket_timeout,
-            password=self.__password,
+            sentinel_kwargs={"password": self.__password},
         )
         try:
             await self.__sentinel.discover_master(self.__masterset_name)
             await self.__sentinel.discover_slaves(self.__masterset_name)
-            self.__master = self.__sentinel.master_for(self.__masterset_name)
-            self.__slave = self.__sentinel.slave_for(self.__masterset_name)
+            self.__master = self.__sentinel.master_for(
+                self.__masterset_name,
+                socket_timeout=self.__socket_timeout,
+                password=self.__password,
+            )
+            self.__slave = self.__sentinel.slave_for(
+                self.__masterset_name,
+                socket_timeout=self.__socket_timeout,
+                password=self.__password,
+            )
             self.connected = True
         except Exception as e:
             raise ConnectionError(
