@@ -80,6 +80,21 @@ class AsyncClient:
             )
         return await self.__master.pipeline(transaction)
 
+    async def read_pipeline_ctx(self) -> AsyncIterator[Pipeline]:
+        if self.__slave is None:
+            raise InitError(
+                "Slave is not connected. Please check your connection settings."
+            )
+        async with self.__slave.pipeline() as pipe:
+            yield pipe
+
+    async def read_pipeline(self) -> Pipeline:
+        if self.__slave is None:
+            raise InitError(
+                "Slave is not connected. Please check your connection settings."
+            )
+        return await self.__slave.pipeline()
+
     async def transaction(
         self,
         func: Callable[[Pipeline], Union[Any, Awaitable[Any]]],
