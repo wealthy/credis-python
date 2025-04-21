@@ -4,4 +4,4 @@ version = "0.1.0"
 description = "Redis controller client for Sentinel Setup"
 readme = "README.md"
 requires-python = ">=3.9"
-dependencies = ["redis>=5.2.1", "setuptools>=78.1.0"]
+dependencies = ["redis>=5.2.1"]
