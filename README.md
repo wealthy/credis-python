@@ -1,6 +1,6 @@
 # Credis Python
 
-A Python client library for Redis with Sentinel support.
+A Python client library for Redis with Sentinel support with command auto routing to master/slave replicas.
 
 ## Overview
 
