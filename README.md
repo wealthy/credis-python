@@ -196,3 +196,179 @@ except ConnectionError as e:
 except InitError as e:
     print(f"Initialization error: {e}")
 ```
+
+## FastAPI Integration with Dependency Injection
+
+Credis can be easily integrated with FastAPI using its dependency injection system. The context manager methods (`write_pipeline_ctx` and `read_pipeline_ctx`) can be used directly with FastAPI's `Depends()`:
+
+```python
+from fastapi import FastAPI, Depends
+from credis.asyncio import AsyncClient
+from redis.asyncio.client import Pipeline
+
+app = FastAPI()
+
+# Create a Redis client
+redis_client = AsyncClient(
+    host="127.0.0.1",
+    port="26379",
+    app_prefix="myapp",
+    password="password",
+    socket_timeout=0.5,
+    masterset_name="mymaster"
+)
+
+# Example endpoint using write_pipeline_ctx directly with dependency injection
+@app.post("/users/{user_id}")
+async def create_user(
+    user_id: str,
+    name: str,
+    pipe: Pipeline = Depends(redis_client.write_pipeline_ctx)
+):
+    pipe.hset(f"user:{user_id}", mapping={"name": name, "created_at": "2025-04-21"})
+    pipe.sadd("users", user_id)
+    result = await pipe.execute()
+    return {"success": True, "results": result}
+
+# Example endpoint using read_pipeline_ctx directly with dependency injection
+@app.get("/users/{user_id}")
+async def get_user(
+    user_id: str,
+    pipe: Pipeline = Depends(redis_client.read_pipeline_ctx)
+):
+    pipe.hgetall(f"user:{user_id}")
+    pipe.sismember("users", user_id)
+    result = await pipe.execute()
+    if not result[1]:
+        return {"error": "User not found"}
+    return {"user_id": user_id, "data": result[0]}
+
+# Example combining both pipelines in the same endpoint
+@app.put("/users/{user_id}")
+async def update_user(
+    user_id: str,
+    name: str,
+    read_pipe: Pipeline = Depends(redis_client.read_pipeline_ctx),
+    write_pipe: Pipeline = Depends(redis_client.write_pipeline_ctx)
+):
+    # First check if user exists
+    read_pipe.sismember("users", user_id)
+    exists = (await read_pipe.execute())[0]
+
+    if not exists:
+        return {"error": "User not found"}
+
+    # Then update user data
+    write_pipe.hset(f"user:{user_id}", "name", name)
+    write_pipe.hset(f"user:{user_id}", "updated_at", "2025-04-21")
+    await write_pipe.execute()
+
+    return {"success": True, "user_id": user_id}
+```
+
+This approach offers several benefits:
+
+- Direct usage of the context manager methods with FastAPI's dependency system
+- Automatic connection management and cleanup
+- Proper context management of pipelines
+- Clear separation of read and write operations
+- Efficient batching of Redis commands
+
+### Using Without Dependency Injection
+
+You can also use Credis normally in FastAPI without dependency injection. This gives you more flexibility in how you manage the client lifecycle:
+
+```python
+from fastapi import FastAPI
+from credis.asyncio import AsyncClient
+
+app = FastAPI()
+
+# Create a Redis client
+redis_client = AsyncClient(
+    host="127.0.0.1",
+    port="26379",
+    app_prefix="myapp",
+    password="password"
+)
+
+# Example using pipeline context managers directly
+@app.post("/users/{user_id}/with-pipeline")
+async def create_user_with_pipeline(user_id: str, name: str):
+    # Use pipeline context manager directly
+    async with redis_client.write_pipeline_ctx() as pipe:
+        pipe.hset(f"user:{user_id}", mapping={"name": name, "created_at": "2025-04-21"})
+        pipe.sadd("users", user_id)
+        result = await pipe.execute()
+
+    return {"success": True, "results": result}
+
+@app.get("/users/{user_id}/with-pipeline")
+async def get_user_with_pipeline(user_id: str):
+    # Use pipeline context manager directly
+    async with redis_client.read_pipeline_ctx() as pipe:
+        pipe.hgetall(f"user:{user_id}")
+        pipe.sismember("users", user_id)
+        result = await pipe.execute()
+
+    if not result[1]:
+        return {"error": "User not found"}
+    return {"user_id": user_id, "data": result[0]}
+
+# Examples using simple async/await without pipelines
+@app.post("/users/{user_id}")
+async def create_user(user_id: str, name: str):
+    # Simple operations using async/await directly
+    await redis_client.hset(
+        f"user:{user_id}",
+        mapping={"name": name, "created_at": "2025-04-21"}
+    )
+    await redis_client.sadd("users", user_id)
+    return {"success": True}
+
+@app.get("/users/{user_id}")
+async def get_user(user_id: str):
+    # Perform simple operations using async/await directly
+    exists = await redis_client.sismember("users", user_id)
+
+    if not exists:
+        return {"error": "User not found"}
+
+    user_data = await redis_client.hgetall(f"user:{user_id}")
+    return {"user_id": user_id, "data": user_data}
+
+@app.put("/users/{user_id}")
+async def update_user(user_id: str, name: str):
+    # Check if user exists first
+    exists = await redis_client.sismember("users", user_id)
+
+    if not exists:
+        return {"error": "User not found"}
+
+    # Update user data
+    await redis_client.hset(f"user:{user_id}", "name", name)
+    await redis_client.hset(f"user:{user_id}", "updated_at", "2025-04-21")
+
+    return {"success": True, "user_id": user_id}
+
+@app.delete("/users/{user_id}")
+async def delete_user(user_id: str):
+    # Check if user exists first
+    exists = await redis_client.sismember("users", user_id)
+
+    if not exists:
+        return {"error": "User not found"}
+
+    # Delete user data and remove from users set
+    await redis_client.delete(f"user:{user_id}")
+    await redis_client.srem("users", user_id)
+
+    return {"success": True, "message": f"User {user_id} deleted"}
+```
+
+This approach is useful when:
+
+1. You want more control over when the pipeline is created and executed
+2. You need to use the Redis client for various purposes within a single endpoint
+3. You prefer simpler code without pipelines for basic operations
+4. You need to perform conditional operations based on intermediate results

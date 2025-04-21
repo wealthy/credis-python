@@ -74,7 +74,6 @@ class AsyncClient:
                 f"Failed to connect to Redis master/slave: {e}"
             ) from e
 
-    @contextlib.asynccontextmanager
     async def write_pipeline_ctx(
         self, transaction: bool = True
     ) -> AsyncIterator[Pipeline]:
