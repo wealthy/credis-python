@@ -97,12 +97,19 @@ class Client:
                 f"Failed to connect to Redis master/slave for {self.__masterset_name}: {str(e)}"
             ) from e
 
-    def pipeline(self, transaction: bool = True) -> Pipeline:
+    def write_pipeline(self, transaction: bool = True) -> Pipeline:
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
         return self.__master.pipeline(transaction)
+
+    def read_pipeline(self, transaction: bool = True) -> Pipeline:
+        if self.__slave is None:
+            raise InitError(
+                "Slave is not connected. Please check your connection settings."
+            )
+        return self.__slave.pipeline(transaction)
 
     def close(self):
         if self.__master:
