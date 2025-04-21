@@ -65,13 +65,40 @@ class AsyncClient:
             ) from e
 
     @contextlib.asynccontextmanager
-    async def pipeline(self, transaction: bool = True) -> AsyncIterator[Pipeline]:
+    async def pipeline_ctx(self, transaction: bool = True) -> AsyncIterator[Pipeline]:
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
         async with self.__master.pipeline(transaction) as pipe:
             yield pipe
+
+    async def pipeline(self, transaction: bool = True) -> Pipeline:
+        if self.__master is None:
+            raise InitError(
+                "Master is not connected. Please check your connection settings."
+            )
+        return await self.__master.pipeline(transaction)
+
+    async def transaction(
+        self,
+        func: Callable[[Pipeline], Union[Any, Awaitable[Any]]],
+        *watches: KeyT,
+        shard_hint: Optional[str] = None,
+        value_from_callable: bool = False,
+        watch_delay: Optional[float] = None,
+    ):
+        if self.__master is None:
+            raise InitError(
+                "Master is not connected. Please check your connection settings."
+            )
+        await self.__master.transaction(
+            func,
+            *watches,
+            shard_hint=shard_hint,
+            value_from_callable=value_from_callable,
+            watch_delay=watch_delay,
+        )
 
     async def close(self):
         if self.__master:
