@@ -65,7 +65,9 @@ class AsyncClient:
             ) from e
 
     @contextlib.asynccontextmanager
-    async def pipeline_ctx(self, transaction: bool = True) -> AsyncIterator[Pipeline]:
+    async def write_pipeline_ctx(
+        self, transaction: bool = True
+    ) -> AsyncIterator[Pipeline]:
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
@@ -73,7 +75,7 @@ class AsyncClient:
         async with self.__master.pipeline(transaction) as pipe:
             yield pipe
 
-    async def pipeline(self, transaction: bool = True) -> Pipeline:
+    async def write_pipeline(self, transaction: bool = True) -> Pipeline:
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
