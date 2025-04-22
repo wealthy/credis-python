@@ -1,4 +1,3 @@
-import contextlib
 from redis.asyncio import Sentinel, Redis
 from redis.asyncio.client import Pipeline
 from credis.exceptions import InitError
