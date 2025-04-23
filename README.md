@@ -75,6 +75,8 @@ members = client.zrange("myzset", 0, -1, withscores=True)
 print(members)  # Output: [(b'member1', 1.0), (b'member2', 2.0), (b'member3', 3.0)]
 
 # Using pipeline for batching operations
+# This write pipeline connects to the master node. Its usage should be prioritized for write operations.
+# For reading purposes, use the read pipeline which connects to slave nodes instead.
 pipe = client.write_pipeline()
 pipe.set("key1", "value1")
 pipe.set("key2", "value2")
