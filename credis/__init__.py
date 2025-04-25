@@ -9,11 +9,11 @@ from typing import (
     Set,
     Union,
 )
-from redis import Sentinel
+from redis import Redis, Sentinel
 from redis.typing import (
-    KeyT,
     EncodableT,
     ResponseT,
+    KeyT,
     PatternT,
     ExpiryT,
     AbsExpiryT,
@@ -99,6 +99,31 @@ class Client:
                 f"Failed to connect to Redis master/slave for {self.__masterset_name}: {str(e)}"
             ) from e
 
+    @property
+    def master(self) -> Redis:
+        if self.__master is None:
+            raise InitError(
+                "Master is not connected. Please check your connection settings."
+            )
+        return self.__master
+
+    @property
+    def slave(self) -> Redis:
+        if self.__slave is None:
+            raise InitError(
+                "Slave is not connected. Please check your connection settings."
+            )
+        return self.__slave
+
+    def make_key(self, name: KeyT) -> str:
+        if isinstance(name, bytes):
+            name = name.decode("utf-8")
+        elif isinstance(name, memoryview):
+            name = name.tobytes().decode("utf-8")
+        else:
+            name = str(name)
+        return f"{self.__app_prefix}:{name}"
+
     def write_pipeline(self, transaction: bool = True) -> Pipeline:
         if self.__master is None:
             raise InitError(
@@ -146,7 +171,7 @@ class Client:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return self.__master.set(
             name=name,
             value=value,
@@ -165,30 +190,30 @@ class Client:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.get(name)
 
-    def delete(self, *names: KeyT) -> ResponseT:
+    def delete(self, *names: str) -> ResponseT:
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        names_list = [f"{self.__app_prefix}:{str(name)}" for name in names]
+        names_list = [self.make_key(str(name)) for name in names]
         return self.__master.delete(*names_list)
 
-    def delete_raw(self, *names: KeyT) -> ResponseT:
+    def delete_raw(self, *names: str) -> ResponseT:
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
         return self.__master.delete(*names)
 
-    def exists(self, *names: KeyT) -> ResponseT:
+    def exists(self, *names: str) -> ResponseT:
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        names_list = [f"{self.__app_prefix}:{str(name)}" for name in names]
+        names_list = [self.make_key(str(name)) for name in names]
         return self.__slave.exists(*names_list)
 
     def keys(self, pattern: PatternT = "*") -> ResponseT:
@@ -201,7 +226,7 @@ class Client:
 
     def hset(
         self,
-        name: str,
+        name: KeyT,
         key: Optional[str] = None,
         value: Optional[str] = None,
         mapping: Optional[dict] = None,
@@ -211,62 +236,62 @@ class Client:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__master.hset(name, key, value, mapping, items)
 
     def hget(
-        self, name: str, key: str
+        self, name: KeyT, key: str
     ) -> Union[Awaitable[Optional[str]], Optional[str]]:
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.hget(name, key)
 
-    def hgetall(self, name: str) -> Union[Awaitable[dict], dict]:
+    def hgetall(self, name: KeyT) -> Union[Awaitable[dict], dict]:
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.hgetall(name)
 
-    def hdel(self, name: str, *keys: str) -> Union[Awaitable[int], int]:
+    def hdel(self, name: KeyT, *keys: str) -> Union[Awaitable[int], int]:
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__master.hdel(name, *keys)
 
-    def hkeys(self, name: str) -> Union[Awaitable[list], list]:
+    def hkeys(self, name: KeyT) -> Union[Awaitable[list], list]:
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.hkeys(name)
 
-    def hvals(self, name: str) -> Union[Awaitable[list], list]:
+    def hvals(self, name: KeyT) -> Union[Awaitable[list], list]:
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.hvals(name)
 
-    def hlen(self, name: str) -> Union[Awaitable[int], int]:
+    def hlen(self, name: KeyT) -> Union[Awaitable[int], int]:
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.hlen(name)
 
     def hscan(
         self,
-        name: str,
+        name: KeyT,
         cursor: int = 0,
         match: Optional[PatternT] = None,
         count: Optional[int] = None,
@@ -276,12 +301,12 @@ class Client:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.hscan(name, cursor, match, count, no_values)
 
     def hscan_iter(
         self,
-        name: str,
+        name: KeyT,
         match: Optional[PatternT] = None,
         count: Optional[int] = None,
         no_values: Optional[bool] = None,
@@ -290,7 +315,7 @@ class Client:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.hscan_iter(name, match, count, no_values)
 
     def flushdb(self, asynchronous: bool = False, **kwargs: Any) -> ResponseT:
@@ -334,38 +359,38 @@ class Client:
             )
         return self.__slave.scan_iter(match, count, _type, **kwargs)
 
-    def sadd(self, name: str, *values: FieldT) -> Union[Awaitable[int], int]:
+    def sadd(self, name: KeyT, *values: FieldT) -> Union[Awaitable[int], int]:
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__master.sadd(name, *values)
 
-    def srem(self, name: str, *values: FieldT) -> Union[Awaitable[int], int]:
+    def srem(self, name: KeyT, *values: FieldT) -> Union[Awaitable[int], int]:
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__master.srem(name, *values)
 
-    def smembers(self, name: str) -> Union[Awaitable[Set], Set]:
+    def smembers(self, name: KeyT) -> Union[Awaitable[Set], Set]:
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.smembers(name)
 
     def sismember(
-        self, name: str, value: str
+        self, name: KeyT, value: str
     ) -> Union[Awaitable[Union[Literal[0], Literal[1]]], Union[Literal[0], Literal[1]]]:
         if self.__slave is None:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.sismember(name, value)
 
     def smove(self, src: str, dst: str, value: str) -> Union[Awaitable[bool], bool]:
@@ -373,8 +398,8 @@ class Client:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        src = f"{self.__app_prefix}:{str(src)}"
-        dst = f"{self.__app_prefix}:{str(dst)}"
+        src = self.make_key(str(src))
+        dst = self.make_key(str(dst))
         return self.__master.smove(src, dst, value)
 
     def sscan(
@@ -388,7 +413,7 @@ class Client:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.sscan(name, cursor, match, count)
 
     def sscan_iter(
@@ -401,7 +426,7 @@ class Client:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.sscan_iter(name, match, count)
 
     def zadd(
@@ -419,17 +444,17 @@ class Client:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__master.zadd(
             name=name, mapping=mapping, nx=nx, xx=xx, ch=ch, incr=incr, gt=gt, lt=lt
         )
 
-    def zrem(self, name: str, *values: EncodableT) -> ResponseT:
+    def zrem(self, name: KeyT, *values: EncodableT) -> ResponseT:
         if self.__master is None:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__master.zrem(name, *values)
 
     def zrange(
@@ -449,7 +474,7 @@ class Client:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.zrange(
             name=name,
             start=start,
@@ -475,7 +500,7 @@ class Client:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.zrevrange(
             name=name,
             start=start,
@@ -498,7 +523,7 @@ class Client:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.zrangebyscore(
             name, min, max, start, num, withscores, score_cast_func
         )
@@ -517,7 +542,7 @@ class Client:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.zrevrangebyscore(
             name, max, min, start, num, withscores, score_cast_func
         )
@@ -527,7 +552,7 @@ class Client:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.zcard(name)
 
     def zcount(self, name: KeyT, min: ZScoreBoundT, max: ZScoreBoundT) -> ResponseT:
@@ -535,7 +560,7 @@ class Client:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.zcount(name, min, max)
 
     def zrank(
@@ -548,7 +573,7 @@ class Client:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.zrank(name, value, withscore)
 
     def zrevrank(
@@ -561,7 +586,7 @@ class Client:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.zrevrank(name, value, withscore)
 
     def zscan(
@@ -576,7 +601,7 @@ class Client:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.zscan(
             name=name,
             cursor=cursor,
@@ -596,7 +621,7 @@ class Client:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(str(name))
         return self.__slave.zscan_iter(
             name=name, match=match, count=count, score_cast_func=score_cast_func
         )

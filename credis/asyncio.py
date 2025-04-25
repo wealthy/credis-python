@@ -73,6 +73,15 @@ class AsyncClient:
                 f"Failed to connect to Redis master/slave: {e}"
             ) from e
 
+    def make_key(self, name: KeyT) -> str:
+        if isinstance(name, bytes):
+            name = name.decode("utf-8")
+        elif isinstance(name, memoryview):
+            name = name.tobytes().decode("utf-8")
+        else:
+            name = str(name)
+        return f"{self.__app_prefix}:{name}"
+
     async def write_pipeline_ctx(
         self, transaction: bool = True
     ) -> AsyncIterator[Pipeline]:
@@ -172,7 +181,7 @@ class AsyncClient:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__master.set(
             name=name,
             value=value,
@@ -193,7 +202,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.get(name)
 
     async def delete(self, *names: KeyT) -> ResponseT:
@@ -203,7 +212,7 @@ class AsyncClient:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        names_list = [f"{self.__app_prefix}:{str(name)}" for name in names]
+        names_list = [self.make_key(name) for name in names]
         return await self.__master.delete(*names_list)
 
     async def delete_raw(self, *names: KeyT) -> ResponseT:
@@ -222,7 +231,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        names_list = [f"{self.__app_prefix}:{str(name)}" for name in names]
+        names_list = [self.make_key(name) for name in names]
         return await self.__slave.exists(*names_list)
 
     async def keys(self, pattern: PatternT = "*") -> ResponseT:
@@ -232,7 +241,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        pattern = f"{self.__app_prefix}:{str(pattern)}"
+        pattern = self.make_key(pattern)
         return await self.__slave.keys(pattern)
 
     async def hset(
@@ -249,7 +258,7 @@ class AsyncClient:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__master.hset(name, key, value, mapping, items)  # type: ignore
 
     async def hget(
@@ -261,7 +270,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.hget(name, key)  # type: ignore
 
     async def hgetall(self, name: str) -> Union[Awaitable[dict], dict]:
@@ -271,7 +280,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.hgetall(name)  # type: ignore
 
     async def hdel(self, name: str, *keys: str) -> Union[Awaitable[int], int]:
@@ -281,7 +290,7 @@ class AsyncClient:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__master.hdel(name, *keys)  # type: ignore
 
     async def hkeys(self, name: str) -> Union[Awaitable[list], list]:
@@ -291,7 +300,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.hkeys(name)  # type: ignore
 
     async def hvals(self, name: str) -> Union[Awaitable[list], list]:
@@ -301,7 +310,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.hvals(name)  # type: ignore
 
     async def hlen(self, name: str) -> Union[Awaitable[int], int]:
@@ -311,7 +320,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.hlen(name)  # type: ignore
 
     async def hscan(
@@ -328,7 +337,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.hscan(name, cursor, match, count, no_values)
 
     async def hscan_iter(
@@ -344,7 +353,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.hscan_iter(name, match, count, no_values)  # type: ignore
 
     async def flushdb(self, asynchronous: bool = False, **kwargs: Any) -> ResponseT:
@@ -403,7 +412,7 @@ class AsyncClient:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__master.sadd(name, *values)  # type: ignore
 
     async def srem(self, name: str, *values: FieldT) -> Union[Awaitable[int], int]:
@@ -413,7 +422,7 @@ class AsyncClient:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__master.srem(name, *values)  # type: ignore
 
     async def smembers(self, name: str) -> Union[Awaitable[Set], Set]:
@@ -423,7 +432,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.smembers(name)  # type: ignore
 
     async def sismember(
@@ -435,7 +444,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.sismember(name, value)  # type: ignore
 
     async def smove(
@@ -447,8 +456,8 @@ class AsyncClient:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        src = f"{self.__app_prefix}:{str(src)}"
-        dst = f"{self.__app_prefix}:{str(dst)}"
+        src = self.make_key(src)
+        dst = self.make_key(dst)
         return await self.__master.smove(src, dst, value)  # type: ignore
 
     async def sscan(
@@ -464,7 +473,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.sscan(name, cursor, match, count)
 
     async def sscan_iter(
@@ -479,7 +488,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.sscan_iter(name, match, count)  # type: ignore
 
     async def zadd(
@@ -499,7 +508,7 @@ class AsyncClient:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__master.zadd(
             name=name, mapping=mapping, nx=nx, xx=xx, ch=ch, incr=incr, gt=gt, lt=lt
         )
@@ -511,7 +520,7 @@ class AsyncClient:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__master.zrem(name, *values)
 
     async def zrange(
@@ -533,7 +542,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.zrange(
             name=name,
             start=start,
@@ -561,7 +570,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.zrevrange(
             name=name,
             start=start,
@@ -586,7 +595,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.zrangebyscore(
             name, min, max, start, num, withscores, score_cast_func
         )
@@ -607,7 +616,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.zrevrangebyscore(
             name, max, min, start, num, withscores, score_cast_func
         )
@@ -619,7 +628,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.zcard(name)
 
     async def zcount(
@@ -631,7 +640,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.zcount(name, min, max)
 
     async def zrank(
@@ -646,7 +655,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.zrank(name, value, withscore)
 
     async def zrevrank(
@@ -661,7 +670,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.zrevrank(name, value, withscore)
 
     async def zscan(
@@ -678,7 +687,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.zscan(
             name=name,
             cursor=cursor,
@@ -700,7 +709,7 @@ class AsyncClient:
             raise InitError(
                 "Slave is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__slave.zscan_iter(
             name=name, match=match, count=count, score_cast_func=score_cast_func
         )  # type: ignore
@@ -710,5 +719,5 @@ class AsyncClient:
             raise InitError(
                 "Master is not connected. Please check your connection settings."
             )
-        name = f"{self.__app_prefix}:{str(name)}"
+        name = self.make_key(name)
         return await self.__master.zremrangebyrank(name, min, max)
