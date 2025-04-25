@@ -176,6 +176,13 @@ class Client:
         names_list = [f"{self.__app_prefix}:{str(name)}" for name in names]
         return self.__master.delete(*names_list)
 
+    def delete_raw(self, *names: KeyT) -> ResponseT:
+        if self.__master is None:
+            raise InitError(
+                "Master is not connected. Please check your connection settings."
+            )
+        return self.__master.delete(*names)
+
     def exists(self, *names: KeyT) -> ResponseT:
         if self.__slave is None:
             raise InitError(
