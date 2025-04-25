@@ -77,11 +77,12 @@ print(members)  # Output: [(b'member1', 1.0), (b'member2', 2.0), (b'member3', 3.
 # Using pipeline for batching operations
 # This write pipeline connects to the master node. Its usage should be prioritized for write operations.
 # For reading purposes, use the read pipeline which connects to slave nodes instead.
+# NOTE: When using pipelines, you must manually add the app_prefix to your keys
 pipe = client.write_pipeline()
-pipe.set("key1", "value1")
-pipe.set("key2", "value2")
-pipe.get("key1")
-pipe.get("key2")
+pipe.set("myapp:key1", "value1")  # Manually adding "myapp:" prefix
+pipe.set("myapp:key2", "value2")  # Manually adding "myapp:" prefix
+pipe.get("myapp:key1")  # Manually adding "myapp:" prefix
+pipe.get("myapp:key2")  # Manually adding "myapp:" prefix
 results = pipe.execute()
 print(results)  # Output: [True, True, b'value1', b'value2']
 
@@ -130,11 +131,12 @@ async def main():
     print(all_values)  # Output: {b'field1': b'value1', b'field2': b'value2', b'field3': b'value3'}
 
     # Using pipeline for batching operations
+    # NOTE: When using pipelines, you must manually add the app_prefix to your keys
     pipe = client.write_pipeline()
-    pipe.set("key1", "value1")
-    pipe.set("key2", "value2")
-    pipe.get("key1")
-    pipe.get("key2")
+    pipe.set("myapp:key1", "value1")  # Manually adding "myapp:" prefix
+    pipe.set("myapp:key2", "value2")  # Manually adding "myapp:" prefix
+    pipe.get("myapp:key1")  # Manually adding "myapp:" prefix
+    pipe.get("myapp:key2")  # Manually adding "myapp:" prefix
     results = await pipe.execute()
     print(results)  # Output: [True, True, b'value1', b'value2']
 
@@ -180,6 +182,8 @@ read_pipe.get("key1")
 read_pipe.get("key2")
 read_results = read_pipe.execute()
 ```
+
+> **Note:** When using pipelines, the application prefix is **not** automatically applied. You must manually add the prefix to your keys in pipeline operations. For example, if your app_prefix is "myapp", you should use `pipe.set("myapp:key1", "value1")` instead of `pipe.set("key1", "value1")` to maintain consistency with regular operations.
 
 ## Error Handling
 
