@@ -206,6 +206,15 @@ class AsyncClient:
         names_list = [f"{self.__app_prefix}:{str(name)}" for name in names]
         return await self.__master.delete(*names_list)
 
+    async def delete_raw(self, *names: KeyT) -> ResponseT:
+        if not self.connected:
+            await self.connect()
+        if self.__master is None:
+            raise InitError(
+                "Master is not connected. Please check your connection settings."
+            )
+        return await self.__master.delete(*names)
+
     async def exists(self, *names: KeyT) -> ResponseT:
         if not self.connected:
             await self.connect()
