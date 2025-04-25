@@ -77,12 +77,12 @@ print(members)  # Output: [(b'member1', 1.0), (b'member2', 2.0), (b'member3', 3.
 # Using pipeline for batching operations
 # This write pipeline connects to the master node. Its usage should be prioritized for write operations.
 # For reading purposes, use the read pipeline which connects to slave nodes instead.
-# NOTE: When using pipelines, you must manually add the app_prefix to your keys
+# Use client.make_key() to add the app_prefix to your keys in pipeline operations
 pipe = client.write_pipeline()
-pipe.set("myapp:key1", "value1")  # Manually adding "myapp:" prefix
-pipe.set("myapp:key2", "value2")  # Manually adding "myapp:" prefix
-pipe.get("myapp:key1")  # Manually adding "myapp:" prefix
-pipe.get("myapp:key2")  # Manually adding "myapp:" prefix
+pipe.set(client.make_key("key1"), "value1")  # Using make_key to add prefix
+pipe.set(client.make_key("key2"), "value2")  # Using make_key to add prefix
+pipe.get(client.make_key("key1"))  # Using make_key to add prefix
+pipe.get(client.make_key("key2"))  # Using make_key to add prefix
 results = pipe.execute()
 print(results)  # Output: [True, True, b'value1', b'value2']
 
@@ -131,12 +131,12 @@ async def main():
     print(all_values)  # Output: {b'field1': b'value1', b'field2': b'value2', b'field3': b'value3'}
 
     # Using pipeline for batching operations
-    # NOTE: When using pipelines, you must manually add the app_prefix to your keys
+    # Use client.make_key() to add the app_prefix to your keys in pipeline operations
     pipe = client.write_pipeline()
-    pipe.set("myapp:key1", "value1")  # Manually adding "myapp:" prefix
-    pipe.set("myapp:key2", "value2")  # Manually adding "myapp:" prefix
-    pipe.get("myapp:key1")  # Manually adding "myapp:" prefix
-    pipe.get("myapp:key2")  # Manually adding "myapp:" prefix
+    pipe.set(client.make_key("key1"), "value1")  # Using make_key to add prefix
+    pipe.set(client.make_key("key2"), "value2")  # Using make_key to add prefix
+    pipe.get(client.make_key("key1"))  # Using make_key to add prefix
+    pipe.get(client.make_key("key2"))  # Using make_key to add prefix
     results = await pipe.execute()
     print(results)  # Output: [True, True, b'value1', b'value2']
 
